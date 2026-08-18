@@ -1,6 +1,22 @@
-const { Redis } = require('@upstash/redis');
+const { createClient } = require('redis');
 
-const redis = Redis.fromEnv();
+let redisClient;
+let redisConnection;
+
+async function getRedis() {
+  if (!process.env.REDIS_URL) {
+    return null;
+  }
+
+  if (!redisClient) {
+    redisClient = createClient({ url: process.env.REDIS_URL });
+    redisClient.on('error', (error) => console.error('Redis client error', error));
+    redisConnection = redisClient.connect();
+  }
+
+  await redisConnection;
+  return redisClient;
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -15,7 +31,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const rawEntries = await redis.lrange('subscribers', 0, -1);
+    const redis = await getRedis();
+    if (!redis) {
+      return res.status(503).json({ message: 'Subscriber storage is not configured. Set REDIS_URL in Vercel and redeploy.' });
+    }
+
+    const rawEntries = await redis.lRange('subscribers', 0, -1);
     const subscribers = rawEntries.map((entry) => (typeof entry === 'string' ? JSON.parse(entry) : entry));
 
     return res.status(200).json({ count: subscribers.length, subscribers });

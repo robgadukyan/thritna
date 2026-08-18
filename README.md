@@ -13,15 +13,14 @@ This package is a responsive static landing page designed to collect email signu
 
 ## Email signup setup
 
-The forms submit to the Vercel function at `/api/subscribe`. It saves entries in Upstash Redis and redirects successful submissions to `thank-you.html`.
+The forms submit to the Vercel function at `/api/subscribe`. It saves entries in the Redis database connected through Vercel and redirects successful submissions to `thank-you.html`.
 
-In the Vercel project for `thrinta.com`, add these environment variables for **Production**, then redeploy:
+In the Vercel project for `thrinta.com`, ensure these environment variables are available for **Production**, then redeploy:
 
-- `UPSTASH_REDIS_REST_URL` — the REST URL from the Upstash Redis database
-- `UPSTASH_REDIS_REST_TOKEN` — the REST token from that database
+- `REDIS_URL` — automatically supplied when the Vercel Redis database is connected to this project
 - `ADMIN_TOKEN` — a long, unique secret you choose for viewing subscribers
 
-Do not place any of these values in `index.html`, `script.js`, or GitHub.
+Do not place either value in `index.html`, `script.js`, or GitHub.
 
 ## Viewing subscribers
 
@@ -29,13 +28,13 @@ After setting `ADMIN_TOKEN`, open this URL in a private browser window, replacin
 
 `https://www.thrinta.com/api/subscribers?token=YOUR_ADMIN_TOKEN`
 
-The endpoint returns JSON with the subscriber count and email records. A `401 Unauthorized` response means the supplied token does not exactly match Vercel's `ADMIN_TOKEN`; a `500` response means the Upstash variables have not been configured or cannot reach the database.
+The endpoint returns JSON with the subscriber count and email records. A `401 Unauthorized` response means the supplied token does not exactly match Vercel's `ADMIN_TOKEN`; a `500` response means the Redis database cannot be reached.
 
 ## Before going live
 
 1. Replace the bracketed legal information in `privacy.html`.
 2. Confirm that `hello@thrinta.com` is the contact address you want to publish.
-3. Add the three Vercel environment variables listed above and redeploy.
+3. Confirm `REDIS_URL` and `ADMIN_TOKEN` are set in Vercel and redeploy.
 4. Add a social-sharing image later by adding an `og:image` meta tag to `index.html`.
 5. Add analytics only after choosing your platform and implementing any cookie/consent requirements that apply.
 6. Test one signup on desktop and mobile and verify it arrives in your list.

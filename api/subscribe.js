@@ -1,15 +1,22 @@
-const { Redis } = require('@upstash/redis');
+const { createClient } = require('redis');
 const querystring = require('querystring');
 
-function getRedis() {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+let redisClient;
+let redisConnection;
 
-  if (!url || !token) {
+async function getRedis() {
+  if (!process.env.REDIS_URL) {
     return null;
   }
 
-  return new Redis({ url, token });
+  if (!redisClient) {
+    redisClient = createClient({ url: process.env.REDIS_URL });
+    redisClient.on('error', (error) => console.error('Redis client error', error));
+    redisConnection = redisClient.connect();
+  }
+
+  await redisConnection;
+  return redisClient;
 }
 
 function parseBody(req) {
@@ -62,9 +69,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const redis = getRedis();
+    const redis = await getRedis();
     if (!redis) {
-      return res.status(503).json({ message: 'Signup storage is not configured. Set the Upstash Redis environment variables in Vercel and redeploy.' });
+      return res.status(503).json({ message: 'Signup storage is not configured. Set REDIS_URL in Vercel and redeploy.' });
     }
 
     const body = await parseBody(req);
@@ -79,11 +86,11 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ message: 'Consent is required to subscribe.' });
     }
 
-    const alreadyExists = await redis.sismember('subscriber_emails', email);
+    const alreadyExists = await redis.sIsMember('subscriber_emails', email);
 
     if (!alreadyExists) {
-      await redis.sadd('subscriber_emails', email);
-      await redis.lpush('subscribers', JSON.stringify({
+      await redis.sAdd('subscriber_emails', email);
+      await redis.lPush('subscribers', JSON.stringify({
         email,
         createdAt: new Date().toISOString(),
         source: body.utm_source || 'direct',
