@@ -25,13 +25,17 @@
     document.querySelectorAll(`#${key}, .${key}`).forEach(input => { input.value = value; });
   });
 
-  // Helpful local-preview behavior: prevents an apparent broken submit when opening index.html directly.
+  // Local preview support: allow a browser preview to move to the confirmation page.
+  // On deployed Netlify sites, the real form submit still runs normally.
   document.querySelectorAll('.signup-form').forEach(form => {
     form.addEventListener('submit', (event) => {
       const status = form.querySelector('.form-status');
-      if (window.location.protocol === 'file:') {
+      const isLocalPreview = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      if (isLocalPreview) {
         event.preventDefault();
-        if (status) status.textContent = 'Preview mode: deploy to Vercel to activate signups.';
+        if (status) status.textContent = 'Redirecting to the thank-you page...';
+        window.location.href = 'thank-you.html';
       }
     });
   });
