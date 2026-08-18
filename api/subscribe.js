@@ -1,7 +1,16 @@
 const { Redis } = require('@upstash/redis');
 const querystring = require('querystring');
 
-const redis = Redis.fromEnv();
+function getRedis() {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    return null;
+  }
+
+  return new Redis({ url, token });
+}
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -53,6 +62,11 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(503).json({ message: 'Signup storage is not configured. Set the Upstash Redis environment variables in Vercel and redeploy.' });
+    }
+
     const body = await parseBody(req);
     const email = String(body.email || '').trim().toLowerCase();
     const consent = String(body.marketing_consent || '').trim();
