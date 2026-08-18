@@ -11,27 +11,31 @@ This package is a responsive static landing page designed to collect email signu
 - `privacy.html` — editable starter privacy notice
 - `robots.txt` and `sitemap.xml` — basic SEO files
 
-## Fastest way to make email collection work
+## Email signup setup
 
-### Option A — Netlify Forms (already wired in)
+The forms submit to the Vercel function at `/api/subscribe`. It saves entries in Upstash Redis and redirects successful submissions to `thank-you.html`.
 
-The forms are already marked with `data-netlify="true"`. Deploy this folder to Netlify and Netlify will detect the forms. Signups will appear in the site's Forms area. Configure Netlify form notifications or export/sync submissions to your email platform.
+In the Vercel project for `thrinta.com`, add these environment variables for **Production**, then redeploy:
 
-If your existing `thrinta.com` site is not on Netlify, you can still use the page design but should choose Option B or C.
+- `UPSTASH_REDIS_REST_URL` — the REST URL from the Upstash Redis database
+- `UPSTASH_REDIS_REST_TOKEN` — the REST token from that database
+- `ADMIN_TOKEN` — a long, unique secret you choose for viewing subscribers
 
-### Option B — Connect your email platform directly
+Do not place any of these values in `index.html`, `script.js`, or GitHub.
 
-Replace each form's `action` and field names with the embed/action values supplied by your email provider (for example Mailchimp, Brevo, Kit, Klaviyo, MailerLite, etc.). Keep the visible HTML/CSS unchanged.
+## Viewing subscribers
 
-### Option C — Your own `/api/subscribe` endpoint
+After setting `ADMIN_TOKEN`, open this URL in a private browser window, replacing the placeholder with that exact value:
 
-Change both form actions from `/thank-you.html` to your own subscription endpoint and return/redirect to `thank-you.html` after a successful signup. This is best if the website already has a backend.
+`https://www.thrinta.com/api/subscribers?token=YOUR_ADMIN_TOKEN`
+
+The endpoint returns JSON with the subscriber count and email records. A `401 Unauthorized` response means the supplied token does not exactly match Vercel's `ADMIN_TOKEN`; a `500` response means the Upstash variables have not been configured or cannot reach the database.
 
 ## Before going live
 
 1. Replace the bracketed legal information in `privacy.html`.
 2. Confirm that `hello@thrinta.com` is the contact address you want to publish.
-3. Connect the forms to the email-list destination you actually use.
+3. Add the three Vercel environment variables listed above and redeploy.
 4. Add a social-sharing image later by adding an `og:image` meta tag to `index.html`.
 5. Add analytics only after choosing your platform and implementing any cookie/consent requirements that apply.
 6. Test one signup on desktop and mobile and verify it arrives in your list.
